@@ -394,5 +394,7 @@ belong to it, the username isn't taken – happen in the service layer. Query pa
 - Text search matches whole (stemmed) words: "react" finds "React" and "reacting", but "reac" finds nothing.
 - Post slugs are generated from the title once, with a short random suffix, and don't change when the title is
   edited, so shared links keep working.
-- A bookmark of a post that goes back to draft is hidden from `/bookmarks`, but still counted on the dashboard.
+- A bookmark of a post that goes back to draft is kept but hidden (and not counted) until the post is published
+  again. Filtering it out needs a `$lookup` on posts before paginating, which is fine at this scale but would be
+  worth revisiting with very large bookmark lists.
 - Communities are curated through the seed script; there is no UI to create them.
