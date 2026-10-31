@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CommentForm } from "@/components/comments/comment-form";
+import { CommentList } from "@/components/comments/comment-list";
 import { PostContent } from "@/components/posts/post-content";
 import { PostOwnerActions } from "@/components/posts/post-owner-actions";
 import { Avatar } from "@/components/ui/avatar";
 import { TopicLink } from "@/components/ui/badge";
+import { getCommentsForPost } from "@/lib/services/comments";
 import { getPublishedPostBySlug } from "@/lib/services/posts";
 import { formatDate } from "@/lib/utils";
 
@@ -33,6 +36,8 @@ export default async function BlogPostPage({ params }: PageProps<"/blogs/[slug]"
   const { slug } = await params;
   const post = await getPublishedPostBySlug(slug);
   if (!post) notFound();
+
+  const comments = await getCommentsForPost(post.id);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -80,6 +85,14 @@ export default async function BlogPostPage({ params }: PageProps<"/blogs/[slug]"
 
         <PostContent content={post.content} />
       </article>
+
+      <section id="comments" aria-labelledby="comments-heading" className="mt-12 space-y-5">
+        <h2 id="comments-heading" className="text-lg font-semibold">
+          Comments ({comments.length})
+        </h2>
+        <CommentForm postId={post.id} />
+        <CommentList comments={comments} />
+      </section>
     </div>
   );
 }
