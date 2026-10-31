@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps<"/blogs/[slug]">): 
   const { slug } = await params;
   const post = await getPublishedPostBySlug(slug);
   if (!post) return { title: "Post not found" };
-  return { title: post.title, description: post.excerpt };
+  return { title: post.title, description: post.excerpt || undefined };
 }
 
 export default async function BlogPostPage({ params }: PageProps<"/blogs/[slug]">) {
