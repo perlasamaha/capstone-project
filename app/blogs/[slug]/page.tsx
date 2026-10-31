@@ -2,13 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostContent } from "@/components/posts/post-content";
+import { PostOwnerActions } from "@/components/posts/post-owner-actions";
 import { Avatar } from "@/components/ui/avatar";
 import { TopicLink } from "@/components/ui/badge";
 import { getPublishedPostBySlug } from "@/lib/services/posts";
 import { formatDate } from "@/lib/utils";
 
 // ISR. Reading a post is the most common request and the content is the same
-// for everyone, so the page is cached and regenerated at most once an hour.
+// for everyone, so the page is cached. Editing/deleting the post or adding a
+// comment calls revalidatePath for this URL, so readers see changes right
+// away; the hourly revalidate is only a fallback. Everything that depends on
+// the visitor (bookmark state, edit/delete, comment form) is a small client
+// island that asks the API after the page loads.
 export const revalidate = 3600;
 
 // Posts are rendered on their first visit and cached from then on, instead of
@@ -67,6 +72,9 @@ export default async function BlogPostPage({ params }: PageProps<"/blogs/[slug]"
               </span>
             </Link>
 
+            <div className="flex flex-wrap items-start gap-2">
+              <PostOwnerActions postId={post.id} slug={post.slug} authorId={post.author.id} />
+            </div>
           </div>
         </header>
 
