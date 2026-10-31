@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CommentForm } from "@/components/comments/comment-form";
 import { CommentList } from "@/components/comments/comment-list";
+import { BookmarkButton } from "@/components/posts/bookmark-button";
 import { PostContent } from "@/components/posts/post-content";
 import { PostOwnerActions } from "@/components/posts/post-owner-actions";
 import { Avatar } from "@/components/ui/avatar";
@@ -78,6 +79,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blogs/[slug]"
             </Link>
 
             <div className="flex flex-wrap items-start gap-2">
+              <BookmarkButton postId={post.id} showLabel />
               <PostOwnerActions postId={post.id} slug={post.slug} authorId={post.author.id} />
             </div>
           </div>
