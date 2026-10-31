@@ -1,6 +1,7 @@
 import { PenLine } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { NavLinks } from "@/components/layout/nav-links";
+import { UserMenu } from "@/components/layout/user-menu";
 import { ButtonLink } from "@/components/ui/button";
 
 export function Header() {
@@ -14,6 +15,7 @@ export function Header() {
           <ButtonLink href="/create" size="sm" className="hidden sm:inline-flex">
             <PenLine aria-hidden /> Write
           </ButtonLink>
+          <UserMenu />
         </div>
       </div>
       {/* On small screens the sidebar is hidden, so the nav moves here. */}
