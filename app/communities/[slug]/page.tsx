@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CommunityIcon } from "@/components/communities/community-icon";
+import { JoinCommunityButton } from "@/components/communities/join-community-button";
 import { PostCard } from "@/components/posts/post-card";
 import { Avatar } from "@/components/ui/avatar";
 import { TopicLink } from "@/components/ui/badge";
@@ -61,6 +62,7 @@ export default async function CommunityPage({ params }: PageProps<"/communities/
             {pluralize(community.memberCount, "member")}
           </p>
         </div>
+        <JoinCommunityButton slug={community.slug} />
       </Card>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
