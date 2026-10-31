@@ -32,11 +32,12 @@ export async function createComment(userId: string, postId: string, input: Comme
     .lean<{ _id: Types.ObjectId; slug: string }>();
   if (!post) throw new HttpError(404, "Post not found");
 
-  const [comment, author] = await Promise.all([
-    Comment.create({ post: post._id, author: userId, body: input.body }),
-    User.findById(userId).select(AUTHOR_FIELDS).lean<LeanAuthor>(),
-  ]);
-  if (!author) throw new HttpError(401, "Your account no longer exists");
+  // The session is a signed cookie, so it can outlive the user document
+  // (e.g. after a database reset). Never save a comment without an author.
+  const author = await User.findById(userId).select(AUTHOR_FIELDS).lean<LeanAuthor>();
+  if (!author) throw new HttpError(401, "Your account no longer exists. Please sign in again.");
+
+  const comment = await Comment.create({ post: post._id, author: userId, body: input.body });
 
   return {
     postSlug: post.slug,
