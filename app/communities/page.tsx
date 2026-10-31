@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { listCommunities } from "@/lib/services/communities";
 import { pluralize } from "@/lib/utils";
-import { communityQuerySchema, firstValues } from "@/schemas/query";
+import { communityQuerySchema, firstValues, parseLenient } from "@/schemas/query";
 
 export const metadata: Metadata = {
   title: "Communities",
@@ -19,8 +19,7 @@ export const metadata: Metadata = {
 // Dynamic: the result depends on ?search and ?page, so it is rendered per
 // request. The search box is a plain GET form, not client state.
 export default async function CommunitiesPage({ searchParams }: PageProps<"/communities">) {
-  const parsed = communityQuerySchema.safeParse(firstValues(await searchParams));
-  const query = parsed.success ? parsed.data : communityQuerySchema.parse({});
+  const query = parseLenient(communityQuerySchema, firstValues(await searchParams));
   const result = await listCommunities(query);
 
   return (

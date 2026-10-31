@@ -29,6 +29,20 @@ export const communityQuerySchema = z.object({
 export type PostQuery = z.infer<typeof postQuerySchema>;
 export type CommunityQuery = z.infer<typeof communityQuerySchema>;
 
+/**
+ * For pages: drop the params that are invalid (so they fall back to their
+ * defaults) instead of ignoring the whole URL. `/blogs?search=react&page=0`
+ * still searches for "react". The API is strict and answers 400 instead.
+ */
+export function parseLenient<T extends z.ZodType>(schema: T, input: Record<string, string>): z.output<T> {
+  const result = schema.safeParse(input);
+  if (result.success) return result.data;
+
+  const invalid = new Set(result.error.issues.map((issue) => String(issue.path[0])));
+  const valid = Object.fromEntries(Object.entries(input).filter(([key]) => !invalid.has(key)));
+  return schema.parse(valid);
+}
+
 type RawParams = Record<string, string | string[] | undefined>;
 
 /** Next gives repeated params as arrays; for our filters the first value wins. */
