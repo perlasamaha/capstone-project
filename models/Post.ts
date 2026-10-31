@@ -8,7 +8,8 @@ const postSchema = new Schema(
     slug: { type: String, required: true, unique: true },
     content: { type: String, required: true },
     // Plain-text preview stored on save, so list queries can skip `content`.
-    excerpt: { type: String, required: true },
+    // Can be empty: a post that is only a code block has no plain text.
+    excerpt: { type: String, default: "" },
     author: { type: Schema.Types.ObjectId, ref: "User", required: true },
     community: { type: Schema.Types.ObjectId, ref: "Community", required: true },
     // Must be topics of the post's community (checked in the service layer).

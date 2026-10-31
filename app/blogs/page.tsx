@@ -12,7 +12,7 @@ import { getAllTopics, getCommunityOptions } from "@/lib/services/communities";
 import { listPublishedPosts } from "@/lib/services/posts";
 import { getCurrentUser } from "@/lib/session";
 import { pluralize } from "@/lib/utils";
-import { firstValues, postQuerySchema } from "@/schemas/query";
+import { firstValues, parseLenient, postQuerySchema } from "@/schemas/query";
 
 export const metadata: Metadata = {
   title: "Blogs",
@@ -24,8 +24,7 @@ export const metadata: Metadata = {
 // MongoDB, not in the browser. Because it's dynamic anyway, it can also read
 // the session and show each user's bookmarks without extra requests.
 export default async function BlogsPage({ searchParams }: PageProps<"/blogs">) {
-  const parsed = postQuerySchema.safeParse(firstValues(await searchParams));
-  const query = parsed.success ? parsed.data : postQuerySchema.parse({});
+  const query = parseLenient(postQuerySchema, firstValues(await searchParams));
 
   const [result, communities, allTopics, user] = await Promise.all([
     listPublishedPosts(query),

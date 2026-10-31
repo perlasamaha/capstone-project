@@ -39,29 +39,40 @@ async function generateUsername(hint: string) {
 export async function findOrCreateOAuthUser(identity: OAuthIdentity) {
   await connectDB();
 
-  const existing = await User.findOne({
-    provider: identity.provider,
-    providerAccountId: identity.providerAccountId,
-  })
-    .select(AUTHOR_FIELDS)
-    .lean<LeanAuthor>();
+  const findExisting = () =>
+    User.findOne({
+      provider: identity.provider,
+      providerAccountId: identity.providerAccountId,
+    })
+      .select(AUTHOR_FIELDS)
+      .lean<LeanAuthor>();
 
+  const existing = await findExisting();
   if (existing) return toAuthor(existing);
 
-  const username = await generateUsername(
-    identity.usernameHint || identity.email?.split("@")[0] || identity.name || "",
-  );
+  const hint = identity.usernameHint || identity.email?.split("@")[0] || identity.name || "";
 
-  const user = await User.create({
-    provider: identity.provider,
-    providerAccountId: identity.providerAccountId,
-    email: identity.email ?? undefined,
-    image: identity.image ?? undefined,
-    name: identity.name?.trim().slice(0, 60) || username,
-    username,
-  });
-
-  return toAuthor(user);
+  for (let attempt = 1; ; attempt++) {
+    const username = await generateUsername(hint);
+    try {
+      const user = await User.create({
+        provider: identity.provider,
+        providerAccountId: identity.providerAccountId,
+        email: identity.email ?? undefined,
+        image: identity.image ?? undefined,
+        name: identity.name?.trim().slice(0, 60) || username,
+        username,
+      });
+      return toAuthor(user);
+    } catch (error) {
+      if (!isDuplicateKeyError(error) || attempt === 3) throw error;
+      // Either this same account was created by a parallel sign-in a moment
+      // ago, or another new user took the same username between our check and
+      // the insert. Use the account in the first case, retry in the second.
+      const created = await findExisting();
+      if (created) return toAuthor(created);
+    }
+  }
 }
 
 /** Fresh values for the session token after the user edits their profile. */

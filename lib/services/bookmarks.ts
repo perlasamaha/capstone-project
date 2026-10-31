@@ -1,5 +1,5 @@
 import "server-only";
-import { isValidObjectId } from "mongoose";
+import { isValidObjectId, Types } from "mongoose";
 import { connectDB, isDuplicateKeyError } from "@/lib/db";
 import { HttpError } from "@/lib/errors";
 import {
@@ -54,9 +54,30 @@ export async function removeBookmark(userId: string, postId: string) {
   await Bookmark.deleteOne({ user: userId, post: postId });
 }
 
+// A bookmarked post can go back to draft. Those bookmarks are kept (the post
+// may be published again) but they are skipped *before* paginating and
+// counting, so page sizes and totals match what the user actually sees.
+const onlyPublishedPosts = [
+  {
+    $lookup: {
+      from: Post.collection.name,
+      localField: "post",
+      foreignField: "_id",
+      pipeline: [{ $match: { status: "published" } }, { $project: { _id: 1 } }],
+      as: "published",
+    },
+  },
+  { $match: { "published.0": { $exists: true } } },
+];
+
 export async function countBookmarks(userId: string) {
   await connectDB();
-  return Bookmark.countDocuments({ user: userId });
+  const [row] = await Bookmark.aggregate<{ total: number }>([
+    { $match: { user: new Types.ObjectId(userId) } },
+    ...onlyPublishedPosts,
+    { $count: "total" },
+  ]);
+  return row?.total ?? 0;
 }
 
 export async function listBookmarks(
@@ -65,31 +86,38 @@ export async function listBookmarks(
   limit: number,
 ): Promise<Paginated<PostCard>> {
   await connectDB();
-  const filter = { user: userId };
 
-  const [docs, total] = await Promise.all([
-    Bookmark.find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate({
-        path: "post",
-        select: "-content",
-        // A bookmarked post that went back to draft disappears from the list.
-        match: { status: "published" },
-        populate: [
-          { path: "author", select: AUTHOR_FIELDS },
-          { path: "community", select: COMMUNITY_REF_FIELDS },
-        ],
-      })
-      .lean<{ post: LeanPost | null }[]>(),
-    Bookmark.countDocuments(filter),
+  const [result] = await Bookmark.aggregate<{
+    page: { post: Types.ObjectId }[];
+    total: { count: number }[];
+  }>([
+    // Uses the { user, createdAt } index.
+    { $match: { user: new Types.ObjectId(userId) } },
+    { $sort: { createdAt: -1 } },
+    ...onlyPublishedPosts,
+    {
+      $facet: {
+        page: [{ $skip: (page - 1) * limit }, { $limit: limit }, { $project: { _id: 0, post: 1 } }],
+        total: [{ $count: "count" }],
+      },
+    },
   ]);
 
-  return {
-    items: docs.flatMap((doc) => (doc.post ? [toPostCard(doc.post)] : [])),
-    page,
-    total,
-    totalPages: Math.max(1, Math.ceil(total / limit)),
-  };
+  const ids = result.page.map((bookmark) => bookmark.post);
+  const total = result.total[0]?.count ?? 0;
+
+  const docs = await Post.find({ _id: { $in: ids } })
+    .select("-content")
+    .populate("author", AUTHOR_FIELDS)
+    .populate("community", COMMUNITY_REF_FIELDS)
+    .lean<LeanPost[]>();
+
+  // $in doesn't keep the order, so put the posts back in bookmark order.
+  const byId = new Map(docs.map((doc) => [doc._id.toString(), doc]));
+  const items = ids.flatMap((id) => {
+    const doc = byId.get(id.toString());
+    return doc ? [toPostCard(doc)] : [];
+  });
+
+  return { items, page, total, totalPages: Math.max(1, Math.ceil(total / limit)) };
 }

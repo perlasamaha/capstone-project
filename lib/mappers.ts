@@ -85,7 +85,7 @@ export function toPostCard(post: LeanPost): PostCard {
     id: post._id.toString(),
     slug: post.slug,
     title: post.title,
-    excerpt: post.excerpt,
+    excerpt: post.excerpt ?? "",
     tags: post.tags ?? [],
     status: post.status,
     publishedAt: post.publishedAt ? post.publishedAt.toISOString() : null,

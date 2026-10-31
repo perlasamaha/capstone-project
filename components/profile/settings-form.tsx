@@ -59,8 +59,10 @@ export function SettingsForm({ profile }: { profile: Profile }) {
       return;
     }
 
-    // Ask Auth.js to rebuild the session token from the database.
-    await update();
+    // Ask Auth.js to rebuild the session token from the database. update()
+    // only POSTs (and triggers the jwt callback's "update") when it gets an
+    // argument; the value itself is ignored by our callback.
+    await update({});
     setPending(false);
     setSaved(true);
     router.refresh();

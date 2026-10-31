@@ -86,8 +86,11 @@ export function PostForm({
     <form
       noValidate
       onSubmit={(event) => {
+        // Pressing Enter in the title saves without changing the status, so
+        // a draft is never published by accident. Publishing is always an
+        // explicit click on the button below.
         event.preventDefault();
-        save("published");
+        save(post?.status ?? "draft");
       }}
       className="space-y-6"
     >
@@ -186,7 +189,7 @@ export function PostForm({
         <Button variant="secondary" onClick={() => save("draft")} disabled={saving !== null}>
           {saving === "draft" ? "Saving…" : isPublished ? "Move to drafts" : "Save draft"}
         </Button>
-        <Button type="submit" disabled={saving !== null}>
+        <Button onClick={() => save("published")} disabled={saving !== null}>
           {saving === "published" ? "Publishing…" : isPublished ? "Update post" : "Publish"}
         </Button>
       </div>

@@ -29,7 +29,9 @@ export function PostCard({ post, action }: { post: Post; action?: ReactNode }) {
             {post.title}
           </Link>
         </h3>
-        <p className="mt-1.5 line-clamp-2 text-sm text-muted">{post.excerpt}</p>
+        {post.excerpt && (
+          <p className="mt-1.5 line-clamp-2 text-sm text-muted">{post.excerpt}</p>
+        )}
 
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <Link

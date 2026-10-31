@@ -12,7 +12,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // own User model is created/loaded in the jwt callback below, which keeps
   // the user document shaped the way the app needs it.
   session: { strategy: "jwt" },
-  pages: { signIn: "/signin" },
+  // Errors (e.g. AccessDenied, or the database being down during the jwt
+  // callback) are shown on our sign-in page instead of the built-in one.
+  pages: { signIn: "/signin", error: "/signin" },
   callbacks: {
     async jwt({ token, account, profile, user, trigger }) {
       // `account` is only present right after the OAuth flow succeeded.

@@ -234,6 +234,12 @@ async function describeChange(
 
 export async function createPost(authorId: string, input: PostInput) {
   await connectDB();
+
+  // The session cookie can outlive the user document (e.g. a database reset).
+  if (!(await User.exists({ _id: authorId }))) {
+    throw new HttpError(401, "Your account no longer exists. Please sign in again.");
+  }
+
   const tags = Array.from(new Set(input.tags));
   const community = await loadCommunityForPost(input.communityId, tags);
 
